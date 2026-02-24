@@ -29,16 +29,16 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
     // Determine target Z position based on requirements:
     // 1. AI & Local: Always White perspective (behind White pieces at z=-15)
     // 2. Online: Default White, switch to assigned color on connect
-    
+
     let targetZ = -15; // Default: White perspective (-15 is behind rank 1/White)
 
     if (mode === 'ONLINE' && playerColor === 'b') {
         targetZ = 15; // Connected as Black -> Black perspective (+15 is behind rank 8/Black)
     }
-      
+
     camera.position.set(0, 10, targetZ);
     camera.lookAt(0, 0, 0);
-    
+
     // Update controls if they exist to sync with new camera position
     if (controlsRef.current) {
       controlsRef.current.update();
@@ -49,15 +49,15 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
   const boardData: BoardSquare[] = useMemo(() => {
     const board = game.board();
     const squares: BoardSquare[] = [];
-    
+
     board.forEach((row, rankIndex) => {
       row.forEach((piece, fileIndex) => {
         const file = String.fromCharCode(97 + fileIndex); // a, b, c...
         const rank = 8 - rankIndex; // 8, 7, 6...
         const squareName = `${file}${rank}` as Square;
-        
+
         const isBlack = (fileIndex + rankIndex) % 2 === 1;
-        
+
         squares.push({
           square: squareName,
           piece: piece,
@@ -100,24 +100,24 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
 
   const isCheck = game.inCheck();
   const kingSquare = useMemo(() => {
-     if (!isCheck) return null;
-     // Find the king of the current turn
-     const turn = game.turn();
-     for(const sq of boardData) {
-        if (sq.piece && sq.piece.type === 'k' && sq.piece.color === turn) {
-            return sq.square;
-        }
-     }
-     return null;
+    if (!isCheck) return null;
+    // Find the king of the current turn
+    const turn = game.turn();
+    for(const sq of boardData) {
+      if (sq.piece && sq.piece.type === 'k' && sq.piece.color === turn) {
+          return sq.square;
+      }
+    }
+    return null;
   }, [isCheck, game.fen()]);
 
   return (
     <>
-      <OrbitControls 
+      <OrbitControls
         ref={controlsRef}
-        minPolarAngle={0} 
-        maxPolarAngle={Math.PI / 2.2} 
-        minDistance={10} 
+        minPolarAngle={0}
+        maxPolarAngle={Math.PI / 2.2}
+        minDistance={10}
         maxDistance={25}
         target={[0, 0, 0]}
       />
@@ -126,20 +126,20 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
       <spotLight position={[-10, 15, -5]} intensity={1} angle={0.3} penumbra={1} castShadow />
       <Environment preset="city" />
       <Stars radius={100} depth={50} count={5000} factor={4} saturation={0} fade speed={1} />
-      
+
       {/* Board Base */}
       <mesh position={[0, -0.5, 0]} receiveShadow>
         <boxGeometry args={[BOARD_SIZE * SQUARE_SIZE + 1, 1, BOARD_SIZE * SQUARE_SIZE + 1]} />
         <meshStandardMaterial color="#1f2937" roughness={0.6} />
       </mesh>
-      
+
       {/* Squares & Pieces */}
       <group>
         {boardData.map((sq) => {
             const isSelected = selectedSquare === sq.square;
             const isHint = possibleMoves.includes(sq.square);
             const isKingInCheck = sq.square === kingSquare;
-            
+
             let materialColor = sq.color;
             if (isSelected) materialColor = HIGHLIGHT_COLOR;
             else if (isKingInCheck) materialColor = CHECK_COLOR;
@@ -148,8 +148,8 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
             return (
               <group key={sq.square}>
                 {/* The Square */}
-                <mesh 
-                  position={[sq.position[0], 0, sq.position[2]]} 
+                <mesh
+                  position={[sq.position[0], 0, sq.position[2]]}
                   receiveShadow
                   onClick={(e) => {
                     e.stopPropagation();
@@ -163,10 +163,10 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
 
                 {/* The Piece */}
                 {sq.piece && (
-                  <Piece 
-                    type={sq.piece.type} 
-                    color={sq.piece.color} 
-                    position={sq.position} 
+                  <Piece
+                    type={sq.piece.type}
+                    color={sq.piece.color}
+                    position={sq.position}
                     isSelected={isSelected}
                     onClick={(e) => {
                       e.stopPropagation();
@@ -174,19 +174,19 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
                     }}
                   />
                 )}
-                
+
                 {/* Move Hint Marker (Dot) for empty squares */}
                 {isHint && !sq.piece && (
-                   <mesh position={[sq.position[0], 0.15, sq.position[2]]} rotation={[-Math.PI/2, 0, 0]}>
+                  <mesh position={[sq.position[0], 0.15, sq.position[2]]} rotation={[-Math.PI/2, 0, 0]}>
                       <circleGeometry args={[0.3, 32]} />
                       <meshStandardMaterial color={MOVE_HINT_COLOR} transparent opacity={0.6} />
-                   </mesh>
+                  </mesh>
                 )}
               </group>
             );
         })}
       </group>
-      
+
       <ContactShadows position={[0, 0, 0]} opacity={0.5} scale={40} blur={2} far={4} />
     </>
   );

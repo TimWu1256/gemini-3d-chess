@@ -57,18 +57,18 @@ const App = () => {
         try {
           const moves = game.moves();
           // Small delay for realism
-          await new Promise(r => setTimeout(r, 500)); 
-          
+          await new Promise(r => setTimeout(r, 500));
+
           const bestMove = await getBestMove(game.fen(), moves);
-          
+
           safeGameMutate((g) => {
-             try {
-               g.move(bestMove);
-             } catch (e) {
+            try {
+              g.move(bestMove);
+            } catch (e) {
                // Fallback random move
                const randomMove = moves[Math.floor(Math.random() * moves.length)];
-               if(randomMove) g.move(randomMove);
-             }
+              if(randomMove) g.move(randomMove);
+            }
           });
         } catch (error) {
           console.error("AI Error", error);
@@ -83,10 +83,10 @@ const App = () => {
   // Initialize Peer
   const initPeer = () => {
     if (peerRef.current) return;
-    
+
     // Create a new peer with a random ID
     const peer = new Peer();
-    
+
     peer.on('open', (id) => {
       setPeerId(id);
       setConnStatus('idle');
@@ -111,7 +111,7 @@ const App = () => {
     setConnStatus('connecting');
     const conn = peerRef.current.connect(remotePeerId);
     connRef.current = conn;
-    
+
     conn.on('open', () => {
       setConnStatus('connected');
       setPlayerColor('b'); // Guest is Black
@@ -169,7 +169,7 @@ const App = () => {
 
     // Set new mode
     setMode(targetMode);
-    
+
     // Reset Board
     const newGame = new Chess();
     setGame(newGame);
@@ -186,7 +186,7 @@ const App = () => {
   const onMove = (from: string, to: string) => {
     // 1. Basic Validation
     if (aiThinking || game.isGameOver()) return;
-    
+
     // 2. Turn Validation
     // AI Mode: Can only move my color
     if (mode === 'AI' && game.turn() !== playerColor) return;
@@ -230,7 +230,7 @@ const App = () => {
   };
 
   const undoMove = () => {
-    if (mode === 'ONLINE') return; 
+    if (mode === 'ONLINE') return;
     safeGameMutate((g) => {
       g.undo();
       if (mode === 'AI') g.undo(); // Undo AI move as well
@@ -238,16 +238,16 @@ const App = () => {
   };
 
   const askAiForHelp = async () => {
-     if (aiThinking || game.isGameOver()) return;
-     setAiThinking(true);
-     try {
+    if (aiThinking || game.isGameOver()) return;
+    setAiThinking(true);
+    try {
         const bestMove = await getBestMove(game.fen(), game.moves());
         alert(`Gemini suggests: ${bestMove}`);
-     } catch (e) {
+    } catch (e) {
         alert("Gemini couldn't find a move.");
-     } finally {
+    } finally {
         setAiThinking(false);
-     }
+    }
   };
 
   // Cleanup peer on unmount
@@ -259,14 +259,14 @@ const App = () => {
 
   return (
     <div className="w-full h-screen relative bg-zinc-900 overflow-hidden">
-      
+
       {/* 3D Scene */}
       <div className="absolute inset-0 z-0">
         <Canvas shadows camera={{ position: [0, 10, 15], fov: 45 }}>
           <color attach="background" args={['#111']} />
-          <ChessBoard3D 
-            game={game} 
-            onMove={onMove} 
+          <ChessBoard3D
+            game={game}
+            onMove={onMove}
             validMoves={game.moves()}
             playerColor={playerColor} // Pass player color for camera update
             mode={mode}
@@ -284,7 +284,7 @@ const App = () => {
             <div className={`w-3 h-3 rounded-full ${game.turn() === 'w' ? 'bg-white' : 'bg-gray-600 border border-white'}`} />
             <span className="font-mono text-sm tracking-wider uppercase">{gameStatus}</span>
           </div>
-          
+
           {aiThinking && (
             <div className="flex items-center gap-2 text-blue-400 text-sm animate-pulse mb-2">
               <BrainCircuit size={16} />
@@ -293,9 +293,9 @@ const App = () => {
           )}
 
           <div className="flex flex-col gap-2 border-t border-white/10 pt-2">
-             {/* Mode Selector */}
-             <div className="flex gap-1 bg-black/40 p-1 rounded-lg mb-2">
-                 <button
+            {/* Mode Selector */}
+            <div className="flex gap-1 bg-black/40 p-1 rounded-lg mb-2">
+                <button
                     onClick={() => switchMode('AI')}
                     className={`flex-1 flex items-center justify-center gap-1 text-[10px] py-2 rounded font-bold transition-colors ${
                       mode === 'AI' ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'
@@ -319,13 +319,13 @@ const App = () => {
                   >
                     <Globe size={12} /> Online
                   </button>
-             </div>
+            </div>
 
-             {/* AI Settings */}
-             {mode === 'AI' && (
+            {/* AI Settings */}
+            {mode === 'AI' && (
                 <div className="flex items-center justify-between text-xs text-gray-400 bg-white/5 p-2 rounded">
                   <span>Playing as:</span>
-                  <button 
+                  <button
                       onClick={() => {
                         setPlayerColor(prev => prev === 'w' ? 'b' : 'w');
                         resetGame();
@@ -335,24 +335,24 @@ const App = () => {
                       {playerColor === 'w' ? "White" : "Black"}
                     </button>
                 </div>
-             )}
-             
+            )}
+
              {/* Online Settings Panel - Only visible in Online Mode */}
-             {mode === 'ONLINE' && (
-               <div className="flex flex-col gap-2 text-xs animate-in fade-in slide-in-from-top-2 duration-300">
+            {mode === 'ONLINE' && (
+              <div className="flex flex-col gap-2 text-xs animate-in fade-in slide-in-from-top-2 duration-300">
                   {connStatus === 'connected' ? (
-                     <div className="flex items-center gap-2 text-green-400 bg-green-500/10 p-2 rounded border border-green-500/20">
+                    <div className="flex items-center gap-2 text-green-400 bg-green-500/10 p-2 rounded border border-green-500/20">
                         <Wifi size={14} />
                         <span>Connected to Opponent</span>
                         <button onClick={() => {
-                           connRef.current?.close();
-                           setConnStatus('idle');
-                           setPlayerColor('w');
+                          connRef.current?.close();
+                          setConnStatus('idle');
+                          setPlayerColor('w');
                         }} className="ml-auto text-white hover:text-red-400 p-1"><X size={14}/></button>
-                     </div>
+                    </div>
                   ) : (
                     <div className="flex flex-col gap-2 p-2 bg-white/5 rounded border border-white/5">
-                       <div className="flex items-center justify-between">
+                      <div className="flex items-center justify-between">
                           <span className="text-gray-400">My ID:</span>
                           <div className="flex gap-1 items-center">
                             {peerId ? (
@@ -366,28 +366,28 @@ const App = () => {
                                 <span className="text-gray-500 italic">Initializing...</span>
                             )}
                           </div>
-                       </div>
-                       
-                       <div className="flex gap-1 mt-1">
-                          <input 
-                            type="text" 
-                            placeholder="Enter Friend's ID" 
+                      </div>
+
+                      <div className="flex gap-1 mt-1">
+                          <input
+                            type="text"
+                            placeholder="Enter Friend's ID"
                             value={remotePeerId}
                             onChange={(e) => setRemotePeerId(e.target.value)}
                             className="bg-black/50 border border-white/20 rounded px-2 py-1 text-white flex-1 focus:outline-none focus:border-blue-500"
                           />
-                          <button 
+                          <button
                             onClick={joinGame}
                             disabled={!remotePeerId || connStatus === 'connecting'}
                             className="bg-blue-600 hover:bg-blue-500 text-white rounded px-3 disabled:opacity-50 transition-colors"
                           >
-                             {connStatus === 'connecting' ? '...' : <Play size={14} />}
+                            {connStatus === 'connecting' ? '...' : <Play size={14} />}
                           </button>
-                       </div>
+                      </div>
                     </div>
                   )}
-               </div>
-             )}
+              </div>
+            )}
           </div>
         </div>
       </div>
@@ -395,7 +395,7 @@ const App = () => {
       {/* Control Bar */}
       <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10 pointer-events-auto">
         <div className="flex items-center gap-4 bg-black/80 backdrop-blur-xl px-6 py-3 rounded-2xl border border-white/10 shadow-2xl">
-          <button 
+          <button
             onClick={() => resetGame()}
             className="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors group"
           >
@@ -406,7 +406,7 @@ const App = () => {
           </button>
 
           {mode !== ('ONLINE' as GameMode) && (
-            <button 
+            <button
               onClick={undoMove}
               disabled={game.history().length === 0 || aiThinking}
               className="flex flex-col items-center gap-1 text-gray-400 hover:text-white transition-colors group disabled:opacity-50"
@@ -420,7 +420,7 @@ const App = () => {
 
           <div className="w-px h-8 bg-white/10 mx-2"></div>
 
-          <button 
+          <button
             onClick={askAiForHelp}
             disabled={aiThinking || game.isGameOver()}
             className="flex flex-col items-center gap-1 text-blue-400 hover:text-blue-300 transition-colors group disabled:opacity-50"
