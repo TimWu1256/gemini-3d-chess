@@ -4,7 +4,7 @@ import { OrbitControls, Stars, Environment, ContactShadows } from '@react-three/
 import { Chess, Square, Move } from 'chess.js';
 import { BOARD_SIZE, SQUARE_SIZE, BOARD_OFFSET, WHITE_SQUARE_COLOR, BLACK_SQUARE_COLOR, HIGHLIGHT_COLOR, MOVE_HINT_COLOR, CHECK_COLOR } from '../constants';
 import { Piece } from './Pieces';
-import { BoardSquare, GameMode } from '../types';
+import { BoardSquare, GameMode, AiHint } from '../types';
 
 interface ChessBoard3DProps {
   game: Chess;
@@ -12,7 +12,7 @@ interface ChessBoard3DProps {
   validMoves: string[];
   playerColor?: 'w' | 'b';
   mode?: GameMode;
-  aiHint?: { from: string, to: string } | null;
+  aiHint?: AiHint | null;
 }
 
 const getPosition = (fileIndex: number, rankIndex: number): [number, number, number] => {

@@ -4,7 +4,7 @@ import { Chess } from 'chess.js';
 import { Peer } from 'peerjs';
 import { ChessBoard3D } from './components/ChessBoard3D';
 import { getBestMove } from './services/geminiService';
-import { PeerMessage, GameMode } from './types';
+import { PeerMessage, GameMode, AiHint } from './types';
 import { Bot, RefreshCw, ChevronLeft, BrainCircuit, Users, Wifi, Copy, Check, Play, X, Monitor, Globe } from 'lucide-react';
 
 const App = () => {
@@ -15,7 +15,7 @@ const App = () => {
   const [gameStatus, setGameStatus] = useState<string>("New Game");
   const [playerColor, setPlayerColor] = useState<'w'|'b'>('w'); // In Online mode: 'w' = Host, 'b' = Guest
   const [mode, setMode] = useState<GameMode>('AI');
-  const [aiHint, setAiHint] = useState<{from: string, to: string} | null>(null);
+  const [aiHint, setAiHint] = useState<AiHint | null>(null);
 
   // Multiplayer State
   const [peerId, setPeerId] = useState<string>('');
@@ -242,12 +242,12 @@ const App = () => {
   };
 
   const askAiForHelp = async () => {
-     if (aiThinking || game.isGameOver()) return;
-     setAiThinking(true);
+    if (aiThinking || game.isGameOver()) return;
+    setAiThinking(true);
      setAiHint(null); // Clear previous hint
-     try {
+    try {
         const bestMoveStr = await getBestMove(game.fen(), game.moves());
-        
+
         // Parse the move to get from/to squares
         const tempGame = new Chess(game.fen());
         // Try precise move first (UCI)
@@ -255,14 +255,14 @@ const App = () => {
         try {
             move = tempGame.move(bestMoveStr, { strict: true });
         } catch(e) {}
-        
+
         if (!move) {
            // Fallback to sloppy/SAN
-           try {
-             move = tempGame.move(bestMoveStr);
-           } catch(e) {}
+          try {
+            move = tempGame.move(bestMoveStr);
+          } catch(e) {}
         }
-        
+
         if (move) {
             setAiHint({ from: move.from, to: move.to });
         } else {
@@ -272,14 +272,14 @@ const App = () => {
             if (found) {
                 setAiHint({ from: found.from, to: found.to });
             } else {
-                 console.warn("Could not parse move:", bestMoveStr);
+                console.warn("Could not parse move:", bestMoveStr);
             }
         }
-     } catch (e) {
+    } catch (e) {
         console.error(e);
-     } finally {
+    } finally {
         setAiThinking(false);
-     }
+    }
   };
 
   // Cleanup peer on unmount

@@ -26,36 +26,55 @@ const PieceGroup = ({
   isBlinking?: boolean;
 }) => {
     const groupRef = useRef<THREE.Group>(null);
-    
-    useFrame(({ clock }) => {
-        if (isBlinking && groupRef.current) {
-            const t = clock.getElapsedTime();
-            const opacity = 0.5 + 0.5 * Math.sin(t * 5); // Pulse between 0.5 and 1
-            
+    // Optimization: Store meshes in a ref to avoid traversing every frame
+    const meshesRef = useRef<THREE.Mesh[]>([]);
+
+    // Update mesh cache when children change
+    useEffect(() => {
+        if (groupRef.current) {
+            const meshes: THREE.Mesh[] = [];
             groupRef.current.traverse((child) => {
-                if (child instanceof THREE.Mesh && child.material) {
-                    // Clone simple logic to avoid messing with shared materials too much
-                    // Ideally we should use instances but for this scale it's fine
+                if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
+                    meshes.push(child);
+                    // Ensure original color is stored for restoration
                     if (!child.userData.originalColor) {
                         child.userData.originalColor = child.material.color.clone();
                     }
-                    
-                    // Pulse emissive
-                    const val = (Math.sin(t * 8) + 1) / 2; // 0 to 1
+                }
+            });
+            meshesRef.current = meshes;
+        }
+    }, [children]); // Re-run if children structure changes
+
+    useFrame(({ clock }) => {
+        if (isBlinking && meshesRef.current.length > 0) {
+            const t = clock.getElapsedTime();
+            // Pulse emissive
+            const val = (Math.sin(t * 8) + 1) / 2; // 0 to 1
+
+            meshesRef.current.forEach((child) => {
+                // Ensure material exists before accessing
+                if (child.material instanceof THREE.MeshStandardMaterial) {
                     child.material.emissive.setRGB(val * 0.5, val * 0.5, 0); // Yellowish pulse
                     child.material.emissiveIntensity = val;
                 }
             });
         }
     });
-    
-    // Reset emissive when not blinking
+
+    // Reset emissive and restore original color when blinking stops
     useEffect(() => {
-        if (!isBlinking && groupRef.current) {
-             groupRef.current.traverse((child) => {
-                if (child instanceof THREE.Mesh && child.material) {
+        if (!isBlinking) {
+             // Use traverse to be safe for cleanup, efficiently handled by useEffect
+            groupRef.current?.traverse((child) => {
+                if (child instanceof THREE.Mesh && child.material instanceof THREE.MeshStandardMaterial) {
                     child.material.emissive.setHex(0x000000);
                     child.material.emissiveIntensity = 0;
+
+                    // Restore original color if stored
+                    if (child.userData.originalColor) {
+                        child.material.color.copy(child.userData.originalColor);
+                    }
                 }
             });
         }
