@@ -54,11 +54,26 @@ Follow these steps to set up the project locally.
     GEMINI_API_KEY=your_actual_api_key_here
     ```
 
-4. **Run the Development Server**
+4. **Running the Application**
+
+    **For Development:**
+    This starts the dev server with Hot Module Replacement (HMR).
+
     ```bash
     npm run dev
     ```
-    Open your browser and navigate to `http://localhost:3000`.
+
+    Open `http://localhost:3000`.
+
+    **For Production Use:**
+    Build the project for optimal performance and smaller bundle size.
+
+    ```bash
+    npm run build
+    npm run preview
+    ```
+
+    This will serve the production build locally at `http://localhost:4173`.
 
 ## 🎮 How to Play
 
