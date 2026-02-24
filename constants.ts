@@ -7,6 +7,7 @@ export const WHITE_SQUARE_COLOR = "#e2e8f0"; // slate-200
 export const BLACK_SQUARE_COLOR = "#475569"; // slate-600
 export const HIGHLIGHT_COLOR = "#facc15"; // yellow-400
 export const MOVE_HINT_COLOR = "#22c55e"; // green-500
+export const AI_DEST_CHECK_COLOR = "#f97316"; // orange-500
 export const CHECK_COLOR = "#ef4444"; // red-500
 
 export const WHITE_PIECE_COLOR = "#f8fafc"; // slate-50

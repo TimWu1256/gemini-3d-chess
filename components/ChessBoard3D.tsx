@@ -2,7 +2,7 @@ import React, { useRef, useState, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment, ContactShadows } from '@react-three/drei';
 import { Chess, Square, Move } from 'chess.js';
-import { BOARD_SIZE, SQUARE_SIZE, BOARD_OFFSET, WHITE_SQUARE_COLOR, BLACK_SQUARE_COLOR, HIGHLIGHT_COLOR, MOVE_HINT_COLOR, CHECK_COLOR } from '../constants';
+import { BOARD_SIZE, SQUARE_SIZE, BOARD_OFFSET, WHITE_SQUARE_COLOR, BLACK_SQUARE_COLOR, HIGHLIGHT_COLOR, MOVE_HINT_COLOR, CHECK_COLOR, AI_DEST_CHECK_COLOR } from '../constants';
 import { Piece } from './Pieces';
 import { BoardSquare, GameMode, AiHint } from '../types';
 
@@ -146,7 +146,7 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
             let materialColor = sq.color;
             if (isSelected) materialColor = HIGHLIGHT_COLOR;
             else if (isKingInCheck) materialColor = CHECK_COLOR;
-            else if (isAiDest) materialColor = "#f97316"; // Orange for AI hint destination
+            else if (isAiDest) materialColor = AI_DEST_CHECK_COLOR; // Orange for AI hint destination
             else if (isHint) materialColor = MOVE_HINT_COLOR;
 
             return (
