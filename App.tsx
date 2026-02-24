@@ -29,7 +29,8 @@ const App = () => {
   // Helper to safely update game state
   const safeGameMutate = useCallback((modify: (g: Chess) => void) => {
     setGame((g) => {
-      const update = new Chess(g.fen());
+      const update = new Chess();
+      update.loadPgn(g.pgn());
       modify(update);
       setFen(update.fen());
       return update;
