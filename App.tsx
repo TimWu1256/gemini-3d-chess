@@ -15,6 +15,7 @@ const App = () => {
   const [gameStatus, setGameStatus] = useState<string>("New Game");
   const [playerColor, setPlayerColor] = useState<'w'|'b'>('w'); // In Online mode: 'w' = Host, 'b' = Guest
   const [mode, setMode] = useState<GameMode>('AI');
+  const [aiHint, setAiHint] = useState<{from: string, to: string} | null>(null);
 
   // Multiplayer State
   const [peerId, setPeerId] = useState<string>('');
@@ -184,6 +185,9 @@ const App = () => {
 
   // Handle Human Move
   const onMove = (from: string, to: string) => {
+    // 0. Clear Hint
+    setAiHint(null);
+
     // 1. Basic Validation
     if (aiThinking || game.isGameOver()) return;
 
@@ -238,16 +242,44 @@ const App = () => {
   };
 
   const askAiForHelp = async () => {
-    if (aiThinking || game.isGameOver()) return;
-    setAiThinking(true);
-    try {
-        const bestMove = await getBestMove(game.fen(), game.moves());
-        alert(`Gemini suggests: ${bestMove}`);
-    } catch (e) {
-        alert("Gemini couldn't find a move.");
-    } finally {
+     if (aiThinking || game.isGameOver()) return;
+     setAiThinking(true);
+     setAiHint(null); // Clear previous hint
+     try {
+        const bestMoveStr = await getBestMove(game.fen(), game.moves());
+        
+        // Parse the move to get from/to squares
+        const tempGame = new Chess(game.fen());
+        // Try precise move first (UCI)
+        let move = null;
+        try {
+            move = tempGame.move(bestMoveStr, { strict: true });
+        } catch(e) {}
+        
+        if (!move) {
+           // Fallback to sloppy/SAN
+           try {
+             move = tempGame.move(bestMoveStr);
+           } catch(e) {}
+        }
+        
+        if (move) {
+            setAiHint({ from: move.from, to: move.to });
+        } else {
+            // Further validation manually if move() fails
+            const validMoves = tempGame.moves({ verbose: true });
+            const found = validMoves.find(m => m.san === bestMoveStr || m.lan === bestMoveStr);
+            if (found) {
+                setAiHint({ from: found.from, to: found.to });
+            } else {
+                 console.warn("Could not parse move:", bestMoveStr);
+            }
+        }
+     } catch (e) {
+        console.error(e);
+     } finally {
         setAiThinking(false);
-    }
+     }
   };
 
   // Cleanup peer on unmount
@@ -270,6 +302,7 @@ const App = () => {
             validMoves={game.moves()}
             playerColor={playerColor} // Pass player color for camera update
             mode={mode}
+            aiHint={aiHint}
           />
         </Canvas>
       </div>
