@@ -7,7 +7,7 @@ on:
     branches: [ main, master ]
 
 jobs:
-  build-and-test:
+  build-and-check:
     name: Build & Check
     runs-on: ubuntu-latest
 
