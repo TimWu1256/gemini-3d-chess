@@ -30,7 +30,8 @@ const App = () => {
   // Helper to safely update game state
   const safeGameMutate = useCallback((modify: (g: Chess) => void) => {
     setGame((g) => {
-      const update = new Chess(g.fen());
+      const update = new Chess();
+      update.loadPgn(g.pgn());
       modify(update);
       setFen(update.fen());
       return update;
@@ -52,6 +53,8 @@ const App = () => {
   // AI Turn Handling
   // FIXED: Removed 'game' from dependency array to prevent infinite loop (black screen issue)
   useEffect(() => {
+    let isMounted = true;
+
     if (mode === 'AI' && game.turn() !== playerColor && !game.isGameOver()) {
       const makeAiMove = async () => {
         setAiThinking(true);
@@ -60,25 +63,40 @@ const App = () => {
           // Small delay for realism
           await new Promise(r => setTimeout(r, 500));
 
+          if (!isMounted) return; // Stop if unmounted or consistency changed
+
           const bestMove = await getBestMove(game.fen(), moves);
 
+          if (!isMounted) return; // Check again after await
+
           safeGameMutate((g) => {
+            // Apply the AI move inside the queued mutation. 'isMounted' and the
+            // effect conditions handle most cases where the component or mode changes.
             try {
-              g.move(bestMove);
+               g.move(bestMove);
             } catch (e) {
                // Fallback random move
                const randomMove = moves[Math.floor(Math.random() * moves.length)];
-              if(randomMove) g.move(randomMove);
+               if(randomMove) g.move(randomMove);
             }
           });
         } catch (error) {
-          console.error("AI Error", error);
+          if (isMounted) console.error("AI Error", error);
         } finally {
-          setAiThinking(false);
+          if (isMounted) setAiThinking(false);
         }
       };
       makeAiMove();
     }
+
+    return () => {
+        isMounted = false;
+        // If the component re-renders or unmounts (e.g. mode change),
+        // we want to ensure any pending AI thinking visualization is cleared
+        // immediately if we are switching away from AI mode.
+        // However, we can't inspect the 'next' mode here easily.
+        // We rely on 'isMounted' to stop the state update.
+    };
   }, [fen, mode, playerColor, safeGameMutate]); // Removed 'game' here
 
   // Initialize Peer
@@ -171,6 +189,9 @@ const App = () => {
     // Set new mode
     setMode(targetMode);
 
+    // Stop any AI thinking
+    setAiThinking(false);
+
     // Reset Board
     const newGame = new Chess();
     setGame(newGame);
@@ -241,8 +262,14 @@ const App = () => {
     });
   };
 
+  // Track current game instance for async checks
+  const gameRef = useRef(game);
+  useEffect(() => { gameRef.current = game; }, [game]);
+
   const askAiForHelp = async () => {
+    const invokingGame = game;
     if (aiThinking || game.isGameOver()) return;
+
     setAiThinking(true);
      setAiHint(null); // Clear previous hint
     try {
@@ -278,6 +305,7 @@ const App = () => {
     } catch (e) {
         console.error(e);
     } finally {
+        // Always reset thinking state; early returns above avoid using stale results
         setAiThinking(false);
     }
   };
