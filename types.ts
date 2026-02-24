@@ -29,6 +29,8 @@ export enum PlayerType {
   ONLINE = 'ONLINE'
 }
 
+export type GameMode = 'AI' | 'LOCAL' | 'ONLINE';
+
 export interface PeerMessage {
   type: 'MOVE' | 'SYNC' | 'RESET';
   data: any;

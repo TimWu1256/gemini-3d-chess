@@ -1,15 +1,17 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
-import { OrbitControls, Text, Stars, Environment, ContactShadows } from '@react-three/drei';
+import { OrbitControls, Stars, Environment, ContactShadows } from '@react-three/drei';
 import { Chess, Square, Move } from 'chess.js';
 import { BOARD_SIZE, SQUARE_SIZE, BOARD_OFFSET, WHITE_SQUARE_COLOR, BLACK_SQUARE_COLOR, HIGHLIGHT_COLOR, MOVE_HINT_COLOR, CHECK_COLOR } from '../constants';
 import { Piece } from './Pieces';
-import { BoardSquare } from '../types';
+import { BoardSquare, GameMode } from '../types';
 
 interface ChessBoard3DProps {
   game: Chess;
   onMove: (from: string, to: string) => void;
   validMoves: string[];
+  playerColor?: 'w' | 'b';
+  mode?: GameMode;
 }
 
 const getPosition = (fileIndex: number, rankIndex: number): [number, number, number] => {
@@ -18,9 +20,31 @@ const getPosition = (fileIndex: number, rankIndex: number): [number, number, num
   return [x, 0, z];
 };
 
-export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validMoves }) => {
+export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validMoves, playerColor = 'w', mode = 'AI' }) => {
+  const { camera } = useThree();
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
-  
+  const controlsRef = useRef<any>(null);
+
+  React.useEffect(() => {
+    // Determine target Z position based on requirements:
+    // 1. AI & Local: Always White perspective (behind White pieces at z=-15)
+    // 2. Online: Default White, switch to assigned color on connect
+    
+    let targetZ = -15; // Default: White perspective (-15 is behind rank 1/White)
+
+    if (mode === 'ONLINE' && playerColor === 'b') {
+        targetZ = 15; // Connected as Black -> Black perspective (+15 is behind rank 8/Black)
+    }
+      
+    camera.position.set(0, 10, targetZ);
+    camera.lookAt(0, 0, 0);
+    
+    // Update controls if they exist to sync with new camera position
+    if (controlsRef.current) {
+      controlsRef.current.update();
+    }
+  }, [mode, playerColor, camera]);
+
   // Parse board state
   const boardData: BoardSquare[] = useMemo(() => {
     const board = game.board();
@@ -90,6 +114,7 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
   return (
     <>
       <OrbitControls 
+        ref={controlsRef}
         minPolarAngle={0} 
         maxPolarAngle={Math.PI / 2.2} 
         minDistance={10} 
@@ -135,27 +160,6 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
                   <meshStandardMaterial color={materialColor} roughness={0.8} />
                 </mesh>
 
-                {/* Rank/File Labels on edges */}
-                {sq.square.endsWith('1') && (
-                    <Text 
-                      position={[sq.position[0], 0.2, sq.position[2] + SQUARE_SIZE/1.8]} 
-                      rotation={[-Math.PI/2,0,0]} 
-                      fontSize={0.8} 
-                      color="white"
-                    >
-                        {sq.square[0]}
-                    </Text>
-                )}
-                 {sq.square.startsWith('a') && (
-                    <Text 
-                      position={[sq.position[0] - SQUARE_SIZE/1.8, 0.2, sq.position[2]]} 
-                      rotation={[-Math.PI/2,0,0]} 
-                      fontSize={0.8} 
-                      color="white"
-                    >
-                        {sq.square[1]}
-                    </Text>
-                )}
 
                 {/* The Piece */}
                 {sq.piece && (

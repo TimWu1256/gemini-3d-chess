@@ -4,10 +4,8 @@ import { Chess } from 'chess.js';
 import { Peer } from 'peerjs';
 import { ChessBoard3D } from './components/ChessBoard3D';
 import { getBestMove } from './services/geminiService';
-import { PeerMessage } from './types';
+import { PeerMessage, GameMode } from './types';
 import { Bot, RefreshCw, ChevronLeft, BrainCircuit, Users, Wifi, Copy, Check, Play, X, Monitor, Globe } from 'lucide-react';
-
-type GameMode = 'AI' | 'LOCAL' | 'ONLINE';
 
 const App = () => {
   // Game State
@@ -270,6 +268,8 @@ const App = () => {
             game={game} 
             onMove={onMove} 
             validMoves={game.moves()}
+            playerColor={playerColor} // Pass player color for camera update
+            mode={mode}
           />
         </Canvas>
       </div>
