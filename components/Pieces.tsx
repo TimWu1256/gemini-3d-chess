@@ -42,7 +42,7 @@ const PieceGroup = ({
                     
                     // Pulse emissive
                     const val = (Math.sin(t * 8) + 1) / 2; // 0 to 1
-                    child.material.emissive.setRGB(val * 0.5, val * 0.5, 0); // Yellowish puld
+                    child.material.emissive.setRGB(val * 0.5, val * 0.5, 0); // Yellowish pulse
                     child.material.emissiveIntensity = val;
                 }
             });
