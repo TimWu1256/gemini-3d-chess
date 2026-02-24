@@ -277,10 +277,8 @@ const App = () => {
         if (gameRef.current !== invokingGame) return;
         alert("Gemini couldn't find a move.");
     } finally {
-        // Only reset if we are still in same game context
-        if (gameRef.current === invokingGame) {
-            setAiThinking(false);
-        }
+        // Always reset thinking state; early returns above avoid using stale results
+        setAiThinking(false);
     }
   };
 
