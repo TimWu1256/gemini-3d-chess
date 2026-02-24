@@ -269,7 +269,7 @@ const App = () => {
     try {
         const bestMove = await getBestMove(game.fen(), game.moves());
 
-        // If game instance changed (e.g. reset or mode switch), ignore result
+        // If game position/context changed (e.g. a move, reset, or mode switch), ignore result
         if (gameRef.current !== invokingGame) return;
 
         alert(`Gemini suggests: ${bestMove}`);
