@@ -17,6 +17,11 @@ export interface BoardSquare {
   color: string;
 }
 
+export interface AiHint {
+  from: string;
+  to: string;
+}
+
 export interface Move {
   from: string;
   to: string;

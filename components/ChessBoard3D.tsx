@@ -2,9 +2,9 @@ import React, { useRef, useState, useMemo } from 'react';
 import { useThree, useFrame } from '@react-three/fiber';
 import { OrbitControls, Stars, Environment, ContactShadows } from '@react-three/drei';
 import { Chess, Square, Move } from 'chess.js';
-import { BOARD_SIZE, SQUARE_SIZE, BOARD_OFFSET, WHITE_SQUARE_COLOR, BLACK_SQUARE_COLOR, HIGHLIGHT_COLOR, MOVE_HINT_COLOR, CHECK_COLOR } from '../constants';
+import { BOARD_SIZE, SQUARE_SIZE, BOARD_OFFSET, WHITE_SQUARE_COLOR, BLACK_SQUARE_COLOR, HIGHLIGHT_COLOR, MOVE_HINT_COLOR, CHECK_COLOR, AI_DEST_CHECK_COLOR } from '../constants';
 import { Piece } from './Pieces';
-import { BoardSquare, GameMode } from '../types';
+import { BoardSquare, GameMode, AiHint } from '../types';
 
 interface ChessBoard3DProps {
   game: Chess;
@@ -12,6 +12,7 @@ interface ChessBoard3DProps {
   validMoves: string[];
   playerColor?: 'w' | 'b';
   mode?: GameMode;
+  aiHint?: AiHint | null;
 }
 
 const getPosition = (fileIndex: number, rankIndex: number): [number, number, number] => {
@@ -20,7 +21,7 @@ const getPosition = (fileIndex: number, rankIndex: number): [number, number, num
   return [x, 0, z];
 };
 
-export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validMoves, playerColor = 'w', mode = 'AI' }) => {
+export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validMoves, playerColor = 'w', mode = 'AI', aiHint }) => {
   const { camera } = useThree();
   const [selectedSquare, setSelectedSquare] = useState<Square | null>(null);
   const controlsRef = useRef<any>(null);
@@ -139,10 +140,13 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
             const isSelected = selectedSquare === sq.square;
             const isHint = possibleMoves.includes(sq.square);
             const isKingInCheck = sq.square === kingSquare;
+            const isAiDest = aiHint?.to === sq.square;
+            const isAiSource = aiHint?.from === sq.square;
 
             let materialColor = sq.color;
             if (isSelected) materialColor = HIGHLIGHT_COLOR;
             else if (isKingInCheck) materialColor = CHECK_COLOR;
+            else if (isAiDest) materialColor = AI_DEST_CHECK_COLOR; // Orange for AI hint destination
             else if (isHint) materialColor = MOVE_HINT_COLOR;
 
             return (
@@ -150,7 +154,6 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
                 {/* The Square */}
                 <mesh
                   position={[sq.position[0], 0, sq.position[2]]}
-                  receiveShadow
                   onClick={(e) => {
                     e.stopPropagation();
                     handleSquareClick(sq.square);
@@ -168,6 +171,7 @@ export const ChessBoard3D: React.FC<ChessBoard3DProps> = ({ game, onMove, validM
                     color={sq.piece.color}
                     position={sq.position}
                     isSelected={isSelected}
+                    isBlinking={isAiSource} // Blink if this is the AI source piece
                     onClick={(e) => {
                       e.stopPropagation();
                       handleSquareClick(sq.square);

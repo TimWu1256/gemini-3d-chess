@@ -4,7 +4,7 @@ import { Chess } from 'chess.js';
 import { Peer } from 'peerjs';
 import { ChessBoard3D } from './components/ChessBoard3D';
 import { getBestMove } from './services/geminiService';
-import { PeerMessage, GameMode } from './types';
+import { PeerMessage, GameMode, AiHint } from './types';
 import { Bot, RefreshCw, ChevronLeft, BrainCircuit, Users, Wifi, Copy, Check, Play, X, Monitor, Globe } from 'lucide-react';
 
 const App = () => {
@@ -15,6 +15,7 @@ const App = () => {
   const [gameStatus, setGameStatus] = useState<string>("New Game");
   const [playerColor, setPlayerColor] = useState<'w'|'b'>('w'); // In Online mode: 'w' = Host, 'b' = Guest
   const [mode, setMode] = useState<GameMode>('AI');
+  const [aiHint, setAiHint] = useState<AiHint | null>(null);
 
   // Multiplayer State
   const [peerId, setPeerId] = useState<string>('');
@@ -205,6 +206,9 @@ const App = () => {
 
   // Handle Human Move
   const onMove = (from: string, to: string) => {
+    // 0. Clear Hint
+    setAiHint(null);
+
     // 1. Basic Validation
     if (aiThinking || game.isGameOver()) return;
 
@@ -267,16 +271,39 @@ const App = () => {
     if (aiThinking || game.isGameOver()) return;
 
     setAiThinking(true);
+     setAiHint(null); // Clear previous hint
     try {
-        const bestMove = await getBestMove(game.fen(), game.moves());
+        const bestMoveStr = await getBestMove(game.fen(), game.moves());
 
-        // If game position/context changed (e.g. a move, reset, or mode switch), ignore result
-        if (gameRef.current !== invokingGame) return;
+        // Parse the move to get from/to squares
+        const tempGame = new Chess(game.fen());
+        // Try precise move first (UCI)
+        let move = null;
+        try {
+            move = tempGame.move(bestMoveStr, { strict: true });
+        } catch(e) {}
 
-        alert(`Gemini suggests: ${bestMove}`);
+        if (!move) {
+           // Fallback to sloppy/SAN
+          try {
+            move = tempGame.move(bestMoveStr);
+          } catch(e) {}
+        }
+
+        if (move) {
+            setAiHint({ from: move.from, to: move.to });
+        } else {
+            // Further validation manually if move() fails
+            const validMoves = tempGame.moves({ verbose: true });
+            const found = validMoves.find(m => m.san === bestMoveStr || m.lan === bestMoveStr);
+            if (found) {
+                setAiHint({ from: found.from, to: found.to });
+            } else {
+                console.warn("Could not parse move:", bestMoveStr);
+            }
+        }
     } catch (e) {
-        if (gameRef.current !== invokingGame) return;
-        alert("Gemini couldn't find a move.");
+        console.error(e);
     } finally {
         // Always reset thinking state; early returns above avoid using stale results
         setAiThinking(false);
@@ -303,6 +330,7 @@ const App = () => {
             validMoves={game.moves()}
             playerColor={playerColor} // Pass player color for camera update
             mode={mode}
+            aiHint={aiHint}
           />
         </Canvas>
       </div>
