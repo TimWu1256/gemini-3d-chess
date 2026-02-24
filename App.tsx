@@ -68,8 +68,8 @@ const App = () => {
           if (!isMounted) return; // Check again after await
 
           safeGameMutate((g) => {
-            // Double check mode inside the mutation to be absolutely sure
-            // although 'isMounted' should handle most cases, the mutation is queued
+            // Apply the AI move inside the queued mutation. 'isMounted' and the
+            // effect conditions handle most cases where the component or mode changes.
             try {
                g.move(bestMove);
             } catch (e) {
