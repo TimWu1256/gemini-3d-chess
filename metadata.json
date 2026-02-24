@@ -1,0 +1,5 @@
+{
+  "name": "Gemini 3D Chess",
+  "description": "A fully interactive 3D Chess application featuring a Bauhaus-inspired aesthetic. Play against a Gemini-powered AI opponent or in local multiplayer mode. Built with React Three Fiber and Tailwind CSS.",
+  "requestFramePermissions": []
+}
